@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# -----------------------------------------------------------------------------
+# NOTICE: EDUCATIONAL AND DEFENSIVE USE ONLY
+# -----------------------------------------------------------------------------
+# This script is a SIMULATION and research tool designed to identify
+# patterns (IOCs) commonly associated with advanced surveillance platforms
+# like Palantir. It is NOT intended for offensive operations or unauthorized
+# monitoring. Unauthorized access or testing of external networks is strictly
+# illegal. Use only on networks you own or are explicitly authorized to protect.
+# -----------------------------------------------------------------------------
+
+#!/usr/bin/env python3
 # Note for Devs. sorry no full concept, cause dont want to build a weapon! 
 # See *-workflow.md for more stuff!
 """
