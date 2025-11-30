@@ -435,10 +435,6 @@ Starring a repository is the best way to show your appreciation and helps increa
 
 Your star helps us help more people. Thank you!
 
-#### Have a look on this (maybe helpful)
-- [PoisonIvory](https://github.com/VolkanSah/PoisonIvory/tree/Nemesis-Nuclear-v.1.3.1) a creative script for Offensive Actions (NOT A FULL APP!)
-- [Sherlocks Home](https://github.com/VolkanSah/SherlocksHome) a small intelligent snippet for monitoring localhost traffic for your servers
-
 ---
 
 ## **Credits**
