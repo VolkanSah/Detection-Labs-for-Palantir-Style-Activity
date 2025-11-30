@@ -2,6 +2,9 @@
 ##### Open SIEM Labs with Sigma Rules
 
 
+> [!WARNING]
+>  ----- !!! READ BELOW !!! -----
+
 ### **Disclaimer & Project Scope**
 
 This repository is strictly for **educational, research, and defensive purposes only**.
@@ -14,8 +17,8 @@ Source files and advanced tools are separated for **expert use only**, prioritiz
 
 💡 Expert Highlight:** Don't miss the **Advanced Jitter Analysis** in the Continuous Monitoring workflow! This logic represents high-fidelity threat hunting and is the most advanced, non-simulated component of this repository.
 
-
-#### 🛑 OPERATIONAL SECURITY (OPSEC) & LEGAL NOTICE 🛑
+--- 
+####  ⚠️ 🛑 OPERATIONAL SECURITY (OPSEC) & LEGAL NOTICE 🛑 ⚠️ 
 **READ THIS FIRST. This section supersedes all other documentation.**
 
 This toolkit, including all rules, fingerprints, and simulation scripts, is provided EXCLUSIVELY for **defensive use on networks you are legally authorized to protect.**
