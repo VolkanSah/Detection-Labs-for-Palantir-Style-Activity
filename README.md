@@ -7,7 +7,7 @@
 
 
 
-This repository is strictly for **educational, research, and defensive purposes only**.
+This repository (lesson) is strictly for **educational, research, and defensive purposes only**.
 **CRITICAL NOTE:** This is a **SAFE SIMULATION** designed to teach defensive concepts. The code is not intended to be, and should never be used as, a functional offensive tool or weapon.
 
 It is NOT a guarantee of security. Cybersecurity is about **reducing risk**, not eliminating it.
