@@ -21,8 +21,6 @@ Source files and advanced tools are separated for **expert use only**, prioritiz
 
 > [!WARNING]
 >  ⚠️ 🛑 OPERATIONAL SECURITY (OPSEC) & LEGAL NOTICE 🛑 ⚠️
-
-
 > #### ABSOLUTELY NO OFFENSIVE USE IS PERMITTED.
 >
 > **Legal Authority is MANDATORY:** Before any monitoring, testing, or analysis, you must possess **explicit, written, and verifiable legal authority** from the network owner.
