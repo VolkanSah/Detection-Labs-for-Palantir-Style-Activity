@@ -437,16 +437,14 @@ Your star helps us help more people. Thank you!
 ## **Credits**
 [Volkan Sah](https://github.com/volkansah)
 
-# LICENSE
+### LICENSE
 
-This Lesson is licensed under the **GPLv3** (GNU General Public License, Version 3).
-
-This means you are free to use it, share it, and modify it. However, since this Lesson is licensed under GPLv3, the following conditions strictly apply:
-
-1.  **Copyleft & Accessibility:** Any derivative work based on this code or its examples must also be licensed under the GPLv3. Your modified work must be made freely accessible to the public.
-2.  **No Sale of Code:** You are explicitly **not allowed** to sell the original code or any derived work.
-
-***
-
-**⚠️ Legal Notice:** The use of this code is governed by German law. Strict adherence to the GPLv3 terms is mandatory. Non-compliance with the GPLv3 can lead to legal action in German court (Gerichtsstandort Deutschland).
+> This Lesson is licensed under the **GPLv3** (GNU General Public License, Version 3).
+> 
+> This means you are free to use it, share it, and modify it. However, since this Lesson is licensed under GPLv3, the following conditions strictly apply:
+> 
+> 1.  **Copyleft & Accessibility:** Any derivative work based on this code or its examples must also be licensed under the GPLv3. Your modified work must be made freely accessible to the public.
+> 2.  **No Sale of Code:** You are explicitly **not allowed** to sell the original code or any derived work.
+>
+> **⚠️ Legal Notice:** The use of this code is governed by German law. Strict adherence to the GPLv3 terms is mandatory. Non-compliance with the GPLv3 can lead to legal action in German court (Gerichtsstandort Deutschland).
 
