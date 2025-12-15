@@ -5,7 +5,7 @@
 
 
 
-> [!WARNING]
+> [!NOTE]
 >  ### **Disclaimer & Project Scope**
 
 
@@ -63,10 +63,6 @@ Source files and advanced tools are separated for **expert use only**, prioritiz
 
 
 
-
-
----
-
 ### **1. Background & Mission**
 
 Technology is never neutral. This project was born from that understanding.
@@ -112,9 +108,9 @@ Sigma rules are **vendor-agnostic** detection rules. Convert them to your SIEM f
 
 ---
 
-### **5. Known White-Label Implementations**
+### **5. SIMULATION White-Label Implementations**
 
-⚠️ SIMULATION NOTICE / HINWEIS ZUR SIMULATION
+⚠️ SIMULATION NOTICE
 
 Please Note: The indicator names listed below (e.g., POLiS, vs-dataharvester, Berlin-7) are FICTITIOUS EXAMPLES (Placeholders) created for this training simulation. They are designed to teach the structure of indicators (IOCs) without exposing classified information or compromising active investigations. Real-world advanced persistent threats (APTs) use generic names (e.g., svchost.exe) to hide. This lab teaches you the logic of detection, using these distinct names to make the learning process easier.
 
