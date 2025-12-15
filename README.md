@@ -435,7 +435,9 @@ Your star helps us help more people. Thank you!
 ---
 
 ## **Credits**
-[Volkan Sah](https://github.com/volkansah)
+
+- **Lesson by:** [Volkan Sah](https://github.com/volkansah)
+- **Structural Assistance & Simulation Design:** A big thank you to my AI partners (**Gemini** and **Claude**). They helped translate my high-speed workflow into this structured learning simulation—and prevented me from just 'slapping everything together' and accidentally giving away all the trade secrets right away 🙂
 
 ### LICENSE
 
