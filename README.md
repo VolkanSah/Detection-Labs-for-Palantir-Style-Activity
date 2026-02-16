@@ -441,7 +441,7 @@ Your star helps us help more people. Thank you!
 
 ### LICENSE
 
-> This Lesson is licensed under the **GPLv3** (GNU General Public License, Version 3).
+> This Lesson is dual-licensed under the **GPLv3** (GNU General Public License, Version 3) and the ESOL (Ethical Security Operations License (ESOL v1.1).
 > 
 > This means you are free to use it, share it, and modify it. However, since this Lesson is licensed under GPLv3, the following conditions strictly apply:
 > 
