@@ -1,0 +1,302 @@
+--- repo/Detection-Labs-for-Palantir-Style-Activity-main/BasicPalantirDetector.py	2026-02-16 15:44:20.000000000 +0000
++++ repo_fixed/Detection-Labs-for-Palantir-Style-Activity-main/BasicPalantirDetector.py	2026-08-11 07:53:03.762012465 +0000
+@@ -18,6 +18,7 @@
+ Based on the SIEM lab documentation
+ """
+ 
++import os
+ import requests
+ import socket
+ import ssl
+@@ -78,14 +79,23 @@
+         self.alerts.append(alert)
+         print(f"[{severity}] {category}: {message}")
+ 
+-    def collect_network_data(self, target_hosts=None, duration_minutes=1):
+-        """Collect network data for beacon analysis"""
+-        if not target_hosts:
+-            target_hosts = ['gotham.palantir.com', '52.0.0.1', 'example.com']
++    def collect_network_data(self, target_hosts=None, duration_minutes=1, interval_seconds=15):
++        """Collect network data for beacon analysis.
+ 
+-        print(f"Collecting network data for {duration_minutes} minute(s)...")
++        BUGFIX (was: hardcoded 60s sleep regardless of interval, 1 cycle == 1 minute):
++        cycles are now derived from duration_minutes/interval_seconds, so
++        check_beaconing_patterns() can actually be exercised - see run_full_scan().
++        """
++        if not target_hosts:
++            # BUGFIX: no longer defaults to real third-party infra
++            # (was: 'gotham.palantir.com', a real Palantir product domain).
++            target_hosts = ['example.com']
++
++        total_cycles = max(1, int((duration_minutes * 60) / interval_seconds))
++        print(f"Collecting network data: {total_cycles} cycle(s) over {duration_minutes} "
++              f"minute(s), every {interval_seconds}s...")
+ 
+-        for cycle in range(duration_minutes):
++        for cycle in range(total_cycles):
+             for host in target_hosts:
+                 try:
+                     start_time = time.time()
+@@ -115,11 +125,8 @@
+                         'error': str(e)[:100]
+                     })
+ 
+-            # Wait between collection cycles
+-            if duration_minutes > 1:
+-                print(f"Waiting... ({cycle+1}/{duration_minutes})")
+-                for _ in range(12):  # 12 * 5s = 60s
+-                    time.sleep(5)
++            if cycle < total_cycles - 1:
++                time.sleep(interval_seconds)
+ 
+     def check_beaconing_patterns(self, threshold=15, window_minutes=5):
+         """Check for beaconing patterns in connection logs"""
+@@ -218,72 +225,182 @@
+                 if remote_port in self.indicators['suspicious_ports']:
+                     self.log_alert('MEDIUM', 'SUSPICIOUS_PORT',
+                                    f'Connection to suspicious port {remote_port}',
+-                                   {'remote_ip': remote_ip, 'local_port': conn.laddr.port if conn.laddr else None})
++                                   {'remote_ip': remote_ip, 'remote_port': remote_port,
++                                    'local_port': conn.laddr.port if conn.laddr else None})
+ 
+                 if remote_ip.startswith('52.') or remote_ip.startswith('54.'):
+                     self.log_alert('LOW', 'AWS_CONNECTION',
+                                    f'Connection to AWS IP range: {remote_ip}:{remote_port}')
+ 
+     def check_dns_patterns(self):
+-        """Check for suspicious DNS patterns (simplified)"""
+-        print("Checking DNS patterns...")
++        """Check for suspicious DNS patterns.
+ 
+-        try:
+-            result = subprocess.run(['nslookup', 'morph-tech.uk'],
+-                                    capture_output=True, text=True, timeout=10)
++        BUGFIX (was: only ever checked the hardcoded 'morph-tech.uk' string;
++        the rest of self.indicators['suspicious_domains'] was dead config).
++        Now walks the full list. Wildcard entries (e.g. 'minerva-*.internal-gov.uk')
++        get '*' substituted with a lookup-able label since nslookup can't glob.
++
++        Note: this resolves the domain itself, which only tells you the domain
++        exists/resolves - it does NOT tell you whether anything on your network
++        queried it. For real tunneling detection you need passive DNS log
++        analysis (queries YOUR resolver actually served), not active lookups.
++        """
++        print("Checking DNS patterns...")
+ 
+-            if result.returncode == 0:
+-                self.log_alert('HIGH', 'DNS_TUNNELING',
+-                               'Suspicious DNS query to known surveillance domain',
+-                               {'domain': 'morph-tech.uk', 'result': result.stdout[:200]})
++        for domain_pattern in self.indicators['suspicious_domains']:
++            query_domain = domain_pattern.replace('*', 'probe')
++            try:
++                result = subprocess.run(['nslookup', query_domain],
++                                        capture_output=True, text=True, timeout=10)
+ 
+-        except Exception as e:
+-            print(f"DNS check failed: {str(e)[:50]}...")
++                if result.returncode == 0:
++                    self.log_alert('HIGH', 'DNS_TUNNELING',
++                                   f'Domain pattern resolves: {domain_pattern}',
++                                   {'domain': domain_pattern, 'result': result.stdout[:200]})
++
++            except Exception as e:
++                print(f"  DNS check failed for {domain_pattern}: {str(e)[:50]}...")
++
++    def check_registry_indicators(self):
++        """Check known-suspicious registry keys.
++
++        BUGFIX: self.indicators['registry_keys'] was defined but never
++        consumed anywhere in the original script - dead config. Windows-only
++        by nature (winreg); on other platforms this now says so explicitly
++        instead of silently doing nothing with no explanation.
++        """
++        print("Checking registry indicators...")
++
++        if os.name != 'nt':
++            print("  Skipped: registry check only applies on Windows.")
++            return
++
++        import winreg  # only available on Windows, hence the local import
++
++        for key_path in self.indicators['registry_keys']:
++            hive_str, _, subkey = key_path.partition('\\')
++            hive = getattr(winreg, hive_str, None)
++            if hive is None:
++                print(f"  Unknown hive in '{key_path}', skipping.")
++                continue
++            try:
++                winreg.OpenKey(hive, subkey)
++                self.log_alert('CRITICAL', 'REGISTRY_INDICATOR',
++                               f'Known surveillance registry key present: {key_path}',
++                               {'key': key_path})
++            except FileNotFoundError:
++                pass  # key not present - no finding, no fabricated alert
++            except PermissionError:
++                print(f"  Access denied reading {key_path} (try an elevated shell).")
+ 
+-    def check_data_chunking_patterns(self, log_file=None):
++    def check_data_chunking_patterns(self, observed_chunks=None):
+         """Analyze network logs for suspicious data chunking"""
+-        print("Checking data chunking patterns...")
++        """
++        BUGFIX: this used to hardcode a fake finding for size==131072 on every
++        single run, regardless of any actual traffic - a stub disguised as a
++        detection. It now only alerts on real observed_chunks data (e.g. from
++        a pcap/scapy capture upstream); with nothing supplied, it explicitly
++        says so instead of fabricating a result.
+ 
+-        suspicious_chunks = []
++        observed_chunks: iterable of (size_bytes, destination) tuples.
++        """
++        print("Checking data chunking patterns...")
+ 
+-        for size in self.indicators['chunk_sizes']:
+-            if size == 131072:
+-                suspicious_chunks.append({
+-                    'size': size,
+-                    'frequency': 15,
+-                    'destinations': ['52.0.0.1', '54.1.2.3']
+-                })
+-
+-        for chunk in suspicious_chunks:
+-            self.log_alert('MEDIUM', 'DATA_CHUNKING',
+-                           'Suspicious data chunking pattern detected',
+-                           {'chunk_size': chunk['size'], 'frequency': chunk['frequency']})
++        if not observed_chunks:
++            print("  No chunk-size data supplied (needs packet capture, e.g. via scapy) - skipping.")
++            return []
++
++        hits = []
++        for size, destination in observed_chunks:
++            if size in self.indicators['chunk_sizes']:
++                self.log_alert('MEDIUM', 'DATA_CHUNKING',
++                               f'Suspicious data chunk size observed: {size} bytes',
++                               {'chunk_size': size, 'destination': destination})
++                hits.append((size, destination))
++        return hits
+ 
+     def generate_sigma_rules(self):
+-        """Generate Sigma rules based on findings"""
++        """Generate a Sigma rule from this run's findings.
++
++        BUGFIX: the original filtered on category == 'BEACON' looking for a
++        'user_agent' field - but UA alerts are logged under 'SUSPICIOUS_UA',
++        and BEACON alerts never carry a user_agent field at all (only host/
++        connection_count/window_minutes/threshold). So this returned an
++        essentially always-empty selection = broken rule, no matter how many
++        UA hits there were.
++
++        Now pulls from every indicator category that actually carries a
++        field-level value, and builds one named selection per type, OR'd
++        together (each alert type is independently meaningful - requiring
++        all of them to match simultaneously would defeat the point).
++        """
+         if not self.alerts:
+             return None
+ 
+-        sigma_rule = {
++        selections = {}
++
++        user_agents = sorted({
++            a['details'].get('user_agent') for a in self.alerts
++            if a['category'] == 'SUSPICIOUS_UA' and a['details'].get('user_agent')
++        })
++        if user_agents:
++            selections['sel_ua'] = {'http.user_agent': user_agents}
++
++        ports = sorted({
++            a['details'].get('remote_port') for a in self.alerts
++            if a['category'] == 'SUSPICIOUS_PORT' and a['details'].get('remote_port')
++        })
++        if ports:
++            selections['sel_port'] = {'destination.port': ports}
++
++        domains = sorted({
++            a['details'].get('domain') for a in self.alerts
++            if a['category'] == 'DNS_TUNNELING' and a['details'].get('domain')
++        })
++        if domains:
++            selections['sel_dns'] = {'dns.query|contains': domains}
++
++        processes = sorted({
++            a['details'].get('exe') for a in self.alerts
++            if a['category'] in ('SUSPICIOUS_PROCESS', 'STEALTH_PROCESS') and a['details'].get('exe')
++        })
++        if processes:
++            selections['sel_process'] = {'Image|endswith': processes}
++
++        fingerprints = sorted({
++            a['details'].get('cert_fingerprint') for a in self.alerts
++            if a['category'] == 'TLS_FINGERPRINT' and a['details'].get('cert_fingerprint')
++        })
++        if fingerprints:
++            selections['sel_tls'] = {'tls.cert_hash': fingerprints}
++
++        if not selections:
++            # We had alerts (e.g. BEACON/GOV_BEACON/REGISTRY) but none carry a
++            # field-level indicator Sigma can match on directly - say so
++            # instead of returning a rule with an empty/always-true condition.
++            return {
++                'title': 'Palantir/Surveillance Detection - Auto Generated',
++                'description': (f'{len(self.alerts)} alert(s) this run, but none carry a '
++                                 'field-level indicator (only behavioral alerts like beaconing). '
++                                 'Build this rule by hand from self.alerts.'),
++                'logsource': {'category': 'network'},
++                'detection': None,
++                'level': 'informational',
++                'tags': ['palantir', 'surveillance', 'auto-generated', 'needs-manual-review']
++            }
++
++        detection = dict(selections)
++        detection['condition'] = ' or '.join(selections.keys())
++
++        return {
+             'title': 'Palantir/Surveillance Detection - Auto Generated',
+-            'description': f'Generated from {len(self.alerts)} suspicious indicators',
++            'description': f'Generated from {len(self.alerts)} alert(s) across {len(selections)} indicator type(s)',
+             'logsource': {'category': 'network'},
+-            'detection': {
+-                'selection': {},
+-                'condition': 'selection'
+-            },
++            'detection': detection,
+             'level': 'high',
+             'tags': ['palantir', 'surveillance', 'auto-generated']
+         }
+ 
+-        user_agents = [alert['details'].get('user_agent') for alert in self.alerts
+-                       if alert['category'] == 'BEACON' and alert['details'].get('user_agent')]
+-
+-        if user_agents:
+-            sigma_rule['detection']['selection']['http.user_agent'] = user_agents
+-
+-        return sigma_rule
+-
+     def run_full_scan(self):
+         """Run complete detection suite"""
+         print("Starting Palantir Detection Suite")
+@@ -291,13 +408,21 @@
+ 
+         start_time = time.time()
+ 
+-        self.collect_network_data(duration_minutes=1)
++        # BUGFIX: was duration_minutes=1 -> collect_network_data made exactly
++        # ONE pass per host, so check_beaconing_patterns(threshold=15,
++        # window_minutes=5) could never see enough samples to fire. This now
++        # gathers ~20 samples/host inside the 5-minute window, so the check
++        # actually gets exercised. This makes a full scan take ~5 minutes;
++        # pass duration_minutes=1 manually for a fast smoke test instead
++        # (beaconing check just won't have data to work with in that case).
++        self.collect_network_data(duration_minutes=5, interval_seconds=15)
+         self.check_beaconing_patterns()
+         self.check_suspicious_processes()
+         self.check_network_connections()
+         self.check_tls_fingerprints('example.com')
+         self.check_dns_patterns()
+-        self.check_data_chunking_patterns()
++        self.check_registry_indicators()
++        self.check_data_chunking_patterns()  # no observed_chunks -> honestly skips, no fake finding
+ 
+         scan_time = time.time() - start_time
