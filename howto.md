@@ -1,3 +1,5 @@
+#### will translate it later in english sorry.. 
+
 # How-To: Palantir-Style Detection Lab in Betrieb nehmen
 
 Praxis-Guide für `Detection-Labs-for-Palantir-Style-Activity`. Kein Grundlagenkurs , direkt zur Sache
